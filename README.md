@@ -7,6 +7,91 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Pasos
+
+Instalación de tenant spatie
+	composer require "spatie/laravel-multitenancy:^2.0"
+	
+	Publicar el archivo de configuración
+	php artisan vendor:publish --provider="Spatie\Multitenancy\MultitenancyServiceProvider" --tag="multitenancy-config"
+
+	app/http/kernel -> middlewareGroups
+	 'tenant' => [
+            \Spatie\Multitenancy\Http\Middleware\NeedsTenant::class,
+            \Spatie\Multitenancy\Http\Middleware\EnsureValidTenantSession::class,
+        ]
+	
+	En config -> Database
+	'landlord' => [
+            'driver' => 'mysql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+	 'tenant' => [
+            'driver' => 'mysql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => null,
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+	DB_CONNECTION=tenant
+	
+	Crea carpeta landlord + migraciones
+	artisan vendor:publish --provider="Spatie\Multitenancy\MultitenancyServiceProvider" --tag="multitenancy-migrations"
+
+	Corre migraciones de landlord
+	php artisan migrate --path=database/migrations/landlord --database=landlord
+
+	En multitenancy.php
+	    'switch_tenant_tasks' => [
+        	\Spatie\Multitenancy\Tasks\SwitchTenantDatabaseTask::class,
+	    ],
+
+	Correr migraciones para inquilinos
+	php artisan tenasts:artisan "migrate --database=tenant"
+
+	DomainTenantFinderque intentará encontrar un atributo Tenantcuyo domainatributo coincida con el nombre de host de la solicitud actual.
+	En multitenancy.php
+		'tenant_finder' => Spatie\Multitenancy\TenantFinder\DomainTenantFinder::class,
+
+    Error Autenticación de Landlord
+    En app->providers->appserviceprovider->boot()
+        /*
+            Ayuda a clasificar la configuración de la BD a usar
+        */
+        if (env('APP_URL_CLEAN') === request()->getHost()) {
+            config(['database.default' => 'landlord']);
+        } else{
+            config(['database.default' => 'tenant']);
+        }
+
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
