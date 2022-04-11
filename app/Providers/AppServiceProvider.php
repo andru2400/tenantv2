@@ -23,6 +23,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        /*
+            Ayuda a clasificar la configuración de la BD a usar
+        */
+        if (env('APP_URL_CLEAN') === request()->getHost()) {
+            config(['database.default' => 'landlord']);
+        } else{
+            config(['database.default' => 'tenant']);
+        }
     }
 }
